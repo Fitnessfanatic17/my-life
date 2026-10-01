@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIFE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;500;600;800&display=swap');
+
+        :root {
+            /* Data & Orbit Color Palette */
+            --c-years:  #4ade80; 
+            --c-months: #60a5fa; 
+            --c-weeks:  #c084fc; 
+            --c-days:   #fb7185; 
+            
+            /* Deep Space Void Base */
+            --space-bg: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            
+            /* Opaque Panel Colors */
+            --panel-bg: linear-gradient(145deg, #111827 0%, #030712 100%);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --panel-shadow: rgba(0, 0, 0, 0.8);
+            
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--space-bg);
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        /* Background Starfield */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .apparatus-container {
+            width: 95vw;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+            padding: 2rem;
+            animation: fadeIn 1.5s ease-out forwards;
+            position: relative;
+            z-index: 10;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .opaque-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 16px 40px var(--panel-shadow);
+            border-radius: 32px;
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .opaque-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        }
+
+        /* Visualization Left Side */
+        .visual-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+        }
+
+        .header-meta {
+            text-align: center;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .header-meta h1 {
+            font-weight: 800;
+            letter-spacing: 12px;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            margin-right: -12px; 
+        }
+
+        .header-meta p {
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .orbital-container {
+            width: 100%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            aspect-ratio: 1/1;
+            position: relative;
+        }
+
+        canvas.orbit-canvas {
+            display: block;
+            max-width: 100%;
+        }
+
+        /* Data Right Side */
+        .data-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-card h3 {
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 1.2rem;
+        }
+
+        .card-years h3 { color: var(--c-years); text-shadow: 0 0 10px rgba(74, 222, 128, 0.3); }
+        .card-months h3 { color: var(--c-months); text-shadow: 0 0 10px rgba(96, 165, 250, 0.3); }
+        .card-weeks h3 { color: var(--c-weeks); text-shadow: 0 0 10px rgba(192, 132, 252, 0.3); }
+        .card-days h3 { color: var(--c-days); text-shadow: 0 0 10px rgba(251, 113, 133, 0.3); }
+
+        .data-row {
+            margin-bottom: 1rem;
+        }
+
+        .data-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .data-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+        }
+
+        .data-value {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+
+        .val-elapsed { font-size: 2rem; }
+        .val-remaining { font-size: 1.2rem; opacity: 0.6; }
+
+        @media (max-width: 1024px) {
+            .apparatus-container { grid-template-columns: 1fr; }
+            .data-panel { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 600px) {
+            .data-panel { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Absolute Background Layer -->
+    <canvas id="starfield"></canvas>
+
+    <!-- Opaque UI Foreground -->
+    <div class="apparatus-container">
+        
+        <!-- Left: Cosmic Orbital Visualization -->
+        <div class="opaque-panel visual-panel">
+            <div class="header-meta">
+                <h1>LIFE</h1>
+                <p>START: JUN 17, 1992<br>END: JUN 17, 2052</p>
+            </div>
+            <div class="orbital-container" id="canvas-container">
+                <canvas class="orbit-canvas" id="orbitalCanvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Right: Real-time Data Grid -->
+        <div class="opaque-panel data-panel">
+            
+            <!-- Years -->
+            <div class="metric-card card-years">
+                <h3>YEARS</h3>
+                <div class="data-row">
+                    <div class="data-label">Elapsed</div>
+                    <div class="data-value val-elapsed" id="y-el">0.0</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Remaining</div>
+                    <div class="data-value val-remaining" id="y-rem">0.0</div>
+                </div>
+            </div>
+
+            <!-- Months -->
+            <div class="metric-card card-months">
+                <h3>MONTHS</h3>
+                <div class="data-row">
+                    <div class="data-label">Elapsed</div>
+                    <div class="data-value val-elapsed" id="m-el">0.0</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Remaining</div>
+                    <div class="data-value val-remaining" id="m-rem">0.0</div>
+                </div>
+            </div>
+
+            <!-- Weeks -->
+            <div class="metric-card card-weeks">
+                <h3>WEEKS</h3>
+                <div class="data-row">
+                    <div class="data-label">Elapsed</div>
+                    <div class="data-value val-elapsed" id="w-el">0.0</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Remaining</div>
+                    <div class="data-value val-remaining" id="w-rem">0.0</div>
+                </div>
+            </div>
+
+            <!-- Days -->
+            <div class="metric-card card-days">
+                <h3>DAYS</h3>
+                <div class="data-row">
+                    <div class="data-label">Elapsed</div>
+                    <div class="data-value val-elapsed" id="d-el">0.0</div>
+                </div>
+                <div class="data-row">
+                    <div class="data-label">Remaining</div>
+                    <div class="data-value val-remaining" id="d-rem">0.0</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Core Temporal Parameters
+        const T_ZERO = new Date('1992-06-17T00:00:00');
+        const APEX = new Date('2052-06-17T00:00:00');
+        const TOTAL_LIFESPAN_MS = APEX - T_ZERO;
+
+        // Mathematical Constants
+        const MS_PER_DAY = 1000 * 60 * 60 * 24;
+        const MS_PER_WEEK = MS_PER_DAY * 7;
+        const MS_PER_MONTH = MS_PER_DAY * 30.4375;
+        const MS_PER_YEAR = MS_PER_DAY * 365.25;
+
+        // Colors
+        const C_YEARS = '#4ade80';
+        const C_MONTHS = '#60a5fa';
+        const C_WEEKS = '#c084fc';
+        const C_DAYS = '#fb7185';
+
+        // DOM Elements
+        const els = {
+            yEl: document.getElementById('y-el'), yRem: document.getElementById('y-rem'),
+            mEl: document.getElementById('m-el'), mRem: document.getElementById('m-rem'),
+            wEl: document.getElementById('w-el'), wRem: document.getElementById('w-rem'),
+            dEl: document.getElementById('d-el'), dRem: document.getElementById('d-rem')
+        };
+
+        // --- BACKGROUND STARFIELD ENGINE ---
+        const starCanvas = document.getElementById('starfield');
+        const starCtx = starCanvas.getContext('2d');
+        let starW, starH;
+        let stars = [];
+
+        function initStars() {
+            starW = window.innerWidth;
+            starH = window.innerHeight;
+            starCanvas.width = starW;
+            starCanvas.height = starH;
+            stars = [];
+            for (let i = 0; i < 250; i++) {
+                stars.push({
+                    x: Math.random() * starW,
+                    y: Math.random() * starH,
+                    radius: Math.random() * 1.5,
+                    alpha: Math.random(),
+                    speed: (Math.random() * 0.01) + 0.002
+                });
+            }
+        }
+
+        function drawStars() {
+            starCtx.clearRect(0, 0, starW, starH);
+            stars.forEach(star => {
+                star.alpha += star.speed;
+                if (star.alpha > 1 || star.alpha < 0.1) star.speed *= -1;
+                starCtx.beginPath();
+                starCtx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                starCtx.fillStyle = `rgba(255, 255, 255, ${Math.abs(star.alpha)})`;
+                starCtx.fill();
+            });
+        }
+
+        // --- FOREGROUND ORBITAL ENGINE ---
+        const canvas = document.getElementById('orbitalCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvas-container');
+        let size = 0;
+
+        function resizeCanvas() {
+            size = Math.min(container.clientWidth, container.clientHeight);
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            ctx.scale(dpr, dpr);
+            
+            initStars();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawContinuousOrbit(cx, cy, radius, progress, color, offsetAngle = 0) {
+            // Minimalist Strip Thickness
+            ctx.lineWidth = size * 0.006; 
+
+            // Faint Background Track
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+            ctx.shadowBlur = 0;
+            ctx.stroke();
+
+            // Active Glowing Strip (Offset by the provided angle)
+            const startAngle = -Math.PI / 2 + offsetAngle;
+            const endAngle = (Math.PI * 2 * progress) - Math.PI / 2 + offsetAngle;
+
+            if (progress > 0) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, startAngle, endAngle);
+                ctx.strokeStyle = color;
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 12;
+                ctx.stroke();
+            }
+
+            // The Planet / Node (Leading Edge)
+            const px = cx + Math.cos(endAngle) * radius;
+            const py = cy + Math.sin(endAngle) * radius;
+
+            ctx.beginPath();
+            ctx.arc(px, py, size * 0.015, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            
+            // Core of Planet
+            ctx.beginPath();
+            ctx.arc(px, py, size * 0.007, 0, Math.PI * 2);
+            ctx.fillStyle = '#0b1121';
+            ctx.shadowBlur = 0;
+            ctx.fill();
+        }
+
+        // --- MAIN SYNTHESIS LOOP ---
+        function formatNumber(val) {
+            return val.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        }
+
+        function synthesize() {
+            const now = new Date();
+            const elapsedMs = now - T_ZERO;
+            const remainingMs = Math.max(0, APEX - now);
+
+            // 1. Data Precision Updates (1 Decimal Place)
+            els.yEl.innerText = formatNumber(elapsedMs / MS_PER_YEAR);
+            els.yRem.innerText = formatNumber(remainingMs / MS_PER_YEAR);
+
+            els.mEl.innerText = formatNumber(elapsedMs / MS_PER_MONTH);
+            els.mRem.innerText = formatNumber(remainingMs / MS_PER_MONTH);
+
+            els.wEl.innerText = formatNumber(elapsedMs / MS_PER_WEEK);
+            els.wRem.innerText = formatNumber(remainingMs / MS_PER_WEEK);
+
+            els.dEl.innerText = formatNumber(elapsedMs / MS_PER_DAY);
+            els.dRem.innerText = formatNumber(remainingMs / MS_PER_DAY);
+
+            // 2. Render Starfield
+            drawStars();
+
+            // 3. Render Orbital Kinematics
+            ctx.clearRect(0, 0, size, size);
+            const cx = size / 2;
+            const cy = size / 2;
+
+            // All rings now track the EXACT same 60-year progress metric.
+            const lifeProgress = elapsedMs / TOTAL_LIFESPAN_MS;
+
+            // Offset each ring by 90 degrees (Math.PI / 2) to create a multi-axis synchronized design
+            
+            // A. Years Orbit (Starts at Top: 0 offset)
+            drawContinuousOrbit(cx, cy, size * 0.40, lifeProgress, C_YEARS, 0);
+
+            // B. Months Orbit (Starts at Right: 90 deg offset)
+            drawContinuousOrbit(cx, cy, size * 0.31, lifeProgress, C_MONTHS, Math.PI / 2);
+
+            // C. Weeks Orbit (Starts at Bottom: 180 deg offset)
+            drawContinuousOrbit(cx, cy, size * 0.22, lifeProgress, C_WEEKS, Math.PI);
+
+            // D. Days Orbit (Starts at Left: 270 deg offset)
+            drawContinuousOrbit(cx, cy, size * 0.13, lifeProgress, C_DAYS, Math.PI * 1.5);
+
+            // Central Core (The Origin Star)
+            ctx.beginPath();
+            ctx.arc(cx, cy, size * 0.04, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 30;
+            ctx.fill();
+
+            requestAnimationFrame(synthesize);
+        }
+
+        // Ignite Engine
+        requestAnimationFrame(synthesize);
+    </script>
+</body>
+</html>
