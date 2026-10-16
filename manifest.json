@@ -1,6 +1,6 @@
 {
-  "name": "My App Name",
-  "short_name": "App",
+  "name": "LIFE",
+  "short_name": "LIFE",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
