@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIFE</title>
+    <title>LIVE NOW</title>
     
     <!-- PWA Manifest and Icons -->
     <link rel="manifest" href="manifest.json">
@@ -38,15 +38,22 @@
             padding: 0;
         }
 
+        html {
+            scroll-snap-type: y mandatory;
+            scroll-behavior: smooth;
+        }
+
         body {
             min-height: 100vh;
+            min-height: 100dvh;
             background: var(--space-bg);
             font-family: 'Montserrat', sans-serif;
             color: var(--text-main);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             overflow-x: hidden;
+            overflow-y: auto;
         }
 
         /* Background Starfield */
@@ -60,13 +67,16 @@
             pointer-events: none;
         }
 
+        /* One Display Tile Per Screen Stack */
         .apparatus-container {
             width: 95vw;
-            max-width: 1400px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2.5rem;
-            padding: 2rem;
+            max-width: 1100px;
+            display: flex;
+            flex-direction: column;
+            gap: 4vh;
+            gap: 4dvh;
+            padding: 2vh 0;
+            padding: 2dvh 0;
             animation: fadeIn 1.5s ease-out forwards;
             position: relative;
             z-index: 10;
@@ -85,6 +95,12 @@
             padding: 2.5rem;
             position: relative;
             overflow: hidden;
+            width: 100%;
+            height: 96vh;
+            height: 96dvh;
+            scroll-snap-align: center;
+            scroll-snap-stop: always;
+            flex-shrink: 0;
         }
 
         .opaque-panel::before {
@@ -94,19 +110,19 @@
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
         }
 
-        /* Visualization Left Side */
+        /* Tile 1: Visualization */
         .visual-panel {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 500px;
         }
 
         .header-meta {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             width: 100%;
+            flex-shrink: 0;
         }
 
         .header-meta h1 {
@@ -128,23 +144,26 @@
         }
 
         .orbital-container {
-            width: 100%; 
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            min-width: 0;
             display: flex; 
             justify-content: center; 
             align-items: center; 
-            aspect-ratio: 1/1;
             position: relative;
         }
 
         canvas.orbit-canvas {
+            position: absolute;
             display: block;
-            max-width: 100%;
         }
 
-        /* Data Right Side */
+        /* Tile 2: Real-time Data Grid */
         .data-panel {
             display: grid;
             grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(2, minmax(0, 1fr));
             gap: 1.5rem;
         }
 
@@ -157,6 +176,7 @@
             flex-direction: column;
             justify-content: center;
             transition: transform 0.3s ease, background 0.3s ease;
+            min-height: 0;
         }
 
         .metric-card:hover {
@@ -200,13 +220,87 @@
         .val-elapsed { font-size: 2rem; }
         .val-remaining { font-size: 1.2rem; opacity: 0.6; }
 
-        @media (max-width: 1024px) {
-            .apparatus-container { grid-template-columns: 1fr; }
-            .data-panel { grid-template-columns: 1fr 1fr; }
+        /* Android Portrait Optimization */
+        @media (max-width: 600px) and (orientation: portrait) {
+            .opaque-panel {
+                padding: 1.5rem;
+                border-radius: 24px;
+            }
+            .header-meta {
+                margin-bottom: 1rem;
+            }
+            .header-meta h1 {
+                font-size: 2rem;
+            }
+            .data-panel {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, minmax(0, 1fr));
+                gap: 0.85rem;
+            }
+            .metric-card {
+                padding: 0.85rem 1.25rem;
+                border-radius: 16px;
+            }
+            .metric-card h3 {
+                font-size: 0.8rem;
+                margin-bottom: 0.4rem;
+            }
+            .data-row {
+                margin-bottom: 0.35rem;
+            }
+            .val-elapsed {
+                font-size: 1.5rem;
+            }
+            .val-remaining {
+                font-size: 1rem;
+            }
         }
 
-        @media (max-width: 600px) {
-            .data-panel { grid-template-columns: 1fr; }
+        /* Android Landscape Optimization */
+        @media (max-height: 550px) and (orientation: landscape) {
+            .opaque-panel {
+                padding: 1rem 1.5rem;
+                border-radius: 24px;
+            }
+            .header-meta {
+                margin-bottom: 0.4rem;
+            }
+            .header-meta h1 {
+                font-size: 1.4rem;
+                letter-spacing: 8px;
+                margin-right: -8px;
+                margin-bottom: 0.2rem;
+            }
+            .header-meta p {
+                font-size: 0.65rem;
+                line-height: 1.3;
+            }
+            .data-panel {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: repeat(2, minmax(0, 1fr));
+                gap: 0.75rem;
+            }
+            .metric-card {
+                padding: 0.6rem 1.1rem;
+                border-radius: 14px;
+            }
+            .metric-card h3 {
+                font-size: 0.75rem;
+                margin-bottom: 0.3rem;
+            }
+            .data-row {
+                margin-bottom: 0.25rem;
+            }
+            .data-label {
+                font-size: 0.55rem;
+                margin-bottom: 0.1rem;
+            }
+            .val-elapsed {
+                font-size: 1.2rem;
+            }
+            .val-remaining {
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -218,7 +312,7 @@
     <!-- Opaque UI Foreground -->
     <div class="apparatus-container">
         
-        <!-- Left: Cosmic Orbital Visualization -->
+        <!-- Tile 1: Cosmic Orbital Visualization -->
         <div class="opaque-panel visual-panel">
             <div class="header-meta">
                 <h1>LIFE</h1>
@@ -229,7 +323,7 @@
             </div>
         </div>
 
-        <!-- Right: Real-time Data Grid -->
+        <!-- Tile 2: Real-time Data Grid -->
         <div class="opaque-panel data-panel">
             
             <!-- Years -->
@@ -355,17 +449,21 @@
         let size = 0;
 
         function resizeCanvas() {
-            size = Math.min(container.clientWidth, container.clientHeight);
+            size = Math.max(0, Math.min(container.clientWidth, container.clientHeight));
             const dpr = window.devicePixelRatio || 1;
             canvas.width = size * dpr;
             canvas.height = size * dpr;
             canvas.style.width = size + 'px';
             canvas.style.height = size + 'px';
-            ctx.scale(dpr, dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             
             initStars();
         }
+
         window.addEventListener('resize', resizeCanvas);
+        if ('ResizeObserver' in window) {
+            new ResizeObserver(resizeCanvas).observe(container);
+        }
         resizeCanvas();
 
         function drawContinuousOrbit(cx, cy, radius, progress, color, offsetAngle = 0) {
